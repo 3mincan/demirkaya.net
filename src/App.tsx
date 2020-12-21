@@ -6,6 +6,7 @@ import axios from "axios";
 import { Loader } from "./common";
 import { Navbar } from "./common";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import ReactGA from "react-ga";
 
 type State = {
   isLoading: boolean;
@@ -13,6 +14,8 @@ type State = {
 };
 
 const splashbaseBg = "https://www.splashbase.co/api/v1/images/random";
+ReactGA.initialize("UA-136784405-1");
+ReactGA.pageview(window.location.pathname + window.location.search);
 
 export const App: FC = () => {
   const [{ isLoading, data }, setState] = useState<State>({
