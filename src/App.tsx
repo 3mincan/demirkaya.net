@@ -13,7 +13,7 @@ type State = {
   data: any;
 };
 
-const splashbaseBg = "https://www.splashbase.co/api/v1/images/random";
+const splashbaseBg = "http://www.splashbase.co/api/v1/images/random";
 ReactGA.initialize("UA-136784405-1");
 ReactGA.pageview(window.location.pathname + window.location.search);
 
