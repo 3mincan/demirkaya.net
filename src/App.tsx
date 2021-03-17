@@ -7,11 +7,16 @@ import { Loader } from "./common";
 import { Navbar } from "./common";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import ReactGA from "react-ga";
+import { createClient } from "pexels";
 
 type State = {
   isLoading: boolean;
   data: any;
 };
+
+const client = createClient(
+  "563492ad6f9170000100000108d022f898e74def841bb1e123526a7f"
+);
 
 const splashbaseBg = "http://www.splashbase.co/api/v1/images/random";
 ReactGA.initialize("UA-136784405-1");
@@ -27,12 +32,13 @@ export const App: FC = () => {
     console.info("I stand with Black Lives Matter");
     setState((state) => ({ ...state, isLoading: true }));
     try {
-      const { data } = await axios.get(splashbaseBg);
-      setState((state) => ({
-        ...state,
-        data: data,
-        isLoading: false,
-      }));
+      client.photos.curated().then((photos) => {
+        setState((state) => ({
+          ...state,
+          data: photos,
+          isLoading: false,
+        }));
+      });
     } catch (err) {
       setState((state) => ({
         ...state,
@@ -46,6 +52,10 @@ export const App: FC = () => {
     fetchBackground();
   }, [fetchBackground]);
 
+  console.log(data);
+
+  var rndm = Math.floor(Math.random() * 11);
+
   return (
     <>
       {isLoading ? (
@@ -53,7 +63,7 @@ export const App: FC = () => {
       ) : (
         <>
           <Helmet>
-            <style>{`div.bg-image { background-image: url("${data.url}") `}</style>
+            <style>{`div.bg-image { background-image: url("${data.photos[rndm].src.original}") `}</style>
           </Helmet>
           <div className="bg-image"></div>
           <div id="content" className="full">

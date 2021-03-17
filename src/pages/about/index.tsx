@@ -20,7 +20,7 @@ export const About: FC = () => {
       <p>
         Lol! Maybe you, not me. This project are full of APIs. Here they are:
       </p>
-      <p>Splashbase Api (for Site Background)</p>
+      <p>Pexels Api (for Site Background)</p>
       <p>Github Api (on Home Page)</p>
       <p>dev.to api (on Articles Page)</p>
       <p>formspree.io api(on Contact Page)</p>
