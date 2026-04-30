@@ -6,7 +6,6 @@ import { type FormEvent, useState } from "react";
 const socialLinks = [
   { href: "https://linkedin.com/in/edemirkaya", label: "LinkedIn" },
   { href: "https://github.com/3mincan", label: "GitHub" },
-  { href: "https://x.com/3mincan", label: "X" },
 ];
 
 type FormStatus = "idle" | "sending" | "success" | "error";
@@ -75,15 +74,14 @@ export function ContactSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6, delay: 0.2 }}
-        className="mb-12"
+        className="mb-12 max-w-2xl"
       >
-        <a
-          href="mailto:e.demirkaya@gmail.com"
-          className="text-lg md:text-xl hover:text-muted-foreground transition-colors"
-        >
-          e.demirkaya@gmail.com
-        </a>
-        <p className="mt-3 text-sm text-muted-foreground">London, UK</p>
+        <p className="text-base leading-relaxed text-muted-foreground md:text-lg">
+          For project inquiries, collaborations, or focused frontend work, use
+          the form below. You can also reach me through the professional profiles
+          linked at the end of this section.
+        </p>
+        <p className="mt-4 text-sm text-muted-foreground">London, UK</p>
       </motion.div>
 
       <motion.form
