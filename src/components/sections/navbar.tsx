@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 const navLinks = [
   { href: "#about", label: "About" },
@@ -10,18 +11,37 @@ const navLinks = [
 ];
 
 export function Navbar() {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    function handleScroll() {
+      setIsScrolled(window.scrollY > 24);
+    }
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <motion.nav
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 lg:px-24 py-6"
+      className="fixed left-0 right-0 top-0 z-50 px-4 py-4 md:px-8 lg:px-20"
     >
-      <div className="flex items-center justify-between">
+      <div
+        className={`mx-auto flex max-w-7xl items-center justify-between rounded-full px-3 py-3 transition-all duration-500 ${
+          isScrolled
+            ? "border border-border/80 bg-background/55 shadow-2xl shadow-black/20 backdrop-blur-xl"
+            : "border border-transparent bg-background/10 backdrop-blur-sm"
+        }`}
+      >
         <Link
           href="/"
           aria-label="Emincan Demirkaya home"
-          className="group relative grid h-11 w-11 place-items-center rounded-full border border-border bg-secondary/50 font-serif text-lg tracking-tight shadow-[inset_0_1px_0_oklch(1_0_0_/_0.08)] transition-colors hover:border-foreground/30"
+          className="group relative grid h-10 w-10 place-items-center rounded-full border border-border bg-secondary/55 font-serif text-base tracking-tight shadow-[inset_0_1px_0_oklch(1_0_0_/_0.08)] transition-colors hover:border-foreground/30"
         >
           <span>ED</span>
           <motion.span
@@ -55,7 +75,7 @@ export function Navbar() {
 
           <Link
             href="#contact"
-            className="text-sm font-medium border border-border px-4 py-2 rounded-full hover:bg-muted transition-colors"
+            className="rounded-full border border-border bg-background/20 px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
           >
             Let&apos;s Talk
           </Link>
