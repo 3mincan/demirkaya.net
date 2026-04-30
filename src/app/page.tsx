@@ -10,7 +10,6 @@ const personJsonLd = {
   "@type": "Person",
   name: "Emincan Demirkaya",
   jobTitle: "Senior Frontend Developer",
-  email: "mailto:e.demirkaya@gmail.com",
   address: {
     "@type": "PostalAddress",
     addressLocality: "London",

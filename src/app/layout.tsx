@@ -66,14 +66,14 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-          strategy="afterInteractive"
+          strategy="beforeInteractive"
         />
-        <Script id="google-analytics" strategy="afterInteractive">
+        <Script id="google-analytics" strategy="beforeInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
-            function gtag(){window.dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}');
+            window.gtag = function gtag(){window.dataLayer.push(arguments);}
+            window.gtag('js', new Date());
+            window.gtag('config', '${GA_MEASUREMENT_ID}');
           `}
         </Script>
         {children}
