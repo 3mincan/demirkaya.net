@@ -44,6 +44,8 @@ Set these in **Vercel → Project → Settings → Environment Variables** (Prod
 | `CONTACT_TO` | no | Inbox that receives form messages |
 | `MAILGUN_API_BASE` | no | Default `https://api.mailgun.net`; EU accounts use `https://api.eu.mailgun.net` |
 
+If `/api/contact` still returns 500, the JSON body includes a `reason` field (e.g. wrong region, domain, or sandbox recipient). Check that first, then Vercel function logs for the raw Mailgun response.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
