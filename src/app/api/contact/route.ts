@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sendContactMail } from "@/lib/brevo";
+import { sendContactMail } from "@/lib/mailgun";
 
 type ContactPayload = {
   name?: string;
@@ -35,15 +35,17 @@ export async function POST(request: Request) {
   }
 
   const {
-    BREVO_API_KEY,
+    MAILGUN_API_KEY,
+    MAILGUN_DOMAIN,
+    MAILGUN_API_BASE,
     MAIL_FROM,
     MAIL_FROM_NAME = "demirkaya.net",
     CONTACT_TO = "e.demirkaya@gmail.com",
   } = process.env;
 
-  if (!BREVO_API_KEY || !MAIL_FROM) {
+  if (!MAILGUN_API_KEY || !MAILGUN_DOMAIN || !MAIL_FROM) {
     console.error(
-      "Contact email misconfigured: BREVO_API_KEY and MAIL_FROM are required."
+      "Contact email misconfigured: MAILGUN_API_KEY, MAILGUN_DOMAIN, and MAIL_FROM are required."
     );
     return NextResponse.json(
       { message: "Email is not configured yet. Please email me directly." },
@@ -58,11 +60,13 @@ export async function POST(request: Request) {
     to: CONTACT_TO,
     fromEmail: MAIL_FROM,
     fromName: MAIL_FROM_NAME,
-    apiKey: BREVO_API_KEY,
+    apiKey: MAILGUN_API_KEY,
+    domain: MAILGUN_DOMAIN,
+    apiBase: MAILGUN_API_BASE,
   });
 
   if (!result.ok) {
-    console.error("Brevo API send failed:", result.status, result.detail);
+    console.error("Mailgun send failed:", result.status, result.detail);
     return NextResponse.json(
       { message: "Could not send your message. Please email me directly." },
       { status: 500 }
