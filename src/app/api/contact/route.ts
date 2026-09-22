@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
+import { sendContactMail } from "@/lib/brevo";
 
 type ContactPayload = {
   name?: string;
@@ -10,15 +10,6 @@ type ContactPayload = {
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }
 
 export async function POST(request: Request) {
@@ -44,45 +35,34 @@ export async function POST(request: Request) {
   }
 
   const {
-    SMTP_HOST,
-    SMTP_PORT = "587",
-    SMTP_USER,
-    SMTP_PASS,
+    BREVO_API_KEY,
     MAIL_FROM,
+    MAIL_FROM_NAME = "demirkaya.net",
     CONTACT_TO = "e.demirkaya@gmail.com",
   } = process.env;
 
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+  if (!BREVO_API_KEY || !MAIL_FROM) {
+    console.error(
+      "Contact email misconfigured: BREVO_API_KEY and MAIL_FROM are required."
+    );
     return NextResponse.json(
       { message: "Email is not configured yet. Please email me directly." },
       { status: 500 }
     );
   }
 
-  const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: Number(SMTP_PORT),
-    secure: SMTP_PORT === "465",
-    auth: {
-      user: SMTP_USER,
-      pass: SMTP_PASS,
-    },
+  const result = await sendContactMail({
+    name,
+    email,
+    message,
+    to: CONTACT_TO,
+    fromEmail: MAIL_FROM,
+    fromName: MAIL_FROM_NAME,
+    apiKey: BREVO_API_KEY,
   });
 
-  try {
-    await transporter.sendMail({
-      from: MAIL_FROM || SMTP_USER,
-      to: CONTACT_TO,
-      replyTo: email,
-      subject: `New message from ${name} via demirkaya.net`,
-      text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
-      html: `
-        <p><strong>Name:</strong> ${escapeHtml(name)}</p>
-        <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-        <p>${escapeHtml(message).replace(/\n/g, "<br />")}</p>
-      `,
-    });
-  } catch {
+  if (!result.ok) {
+    console.error("Brevo API send failed:", result.status, result.detail);
     return NextResponse.json(
       { message: "Could not send your message. Please email me directly." },
       { status: 500 }

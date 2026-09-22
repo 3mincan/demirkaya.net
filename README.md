@@ -29,6 +29,21 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Contact form (Brevo API)
+
+The `/api/contact` route sends mail through the [Brevo transactional email API](https://developers.brevo.com/reference/send-transac-email) (HTTPS). This is intentional: outbound SMTP from Vercel is unreliable.
+
+Set these environment variables in **Vercel → Project → Settings → Environment Variables** (Production + Preview), then redeploy:
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `BREVO_API_KEY` | yes | API key from Brevo → SMTP & API → **API keys** (starts with `xkeysib-`) |
+| `MAIL_FROM` | yes | Verified sender email in Brevo (not the `…@smtp-brevo.com` login) |
+| `MAIL_FROM_NAME` | no | Sender display name (default `demirkaya.net`) |
+| `CONTACT_TO` | no | Inbox that receives form messages |
+
+Do **not** use `SMTP_USER` / `SMTP_PASS` for this app — those are SMTP-only and are ignored.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
