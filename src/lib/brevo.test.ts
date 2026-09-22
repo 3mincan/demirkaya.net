@@ -1,43 +1,80 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import {
-  BREVO_SMTP_HOST,
-  BREVO_SMTP_PORT,
-  buildContactMailMessage,
-  createBrevoTransport,
-} from "./brevo";
+import { buildContactEmailPayload, sendContactMail } from "./brevo";
 
-test("createBrevoTransport uses Brevo SMTP defaults", () => {
-  const transport = createBrevoTransport({
-    user: "78a361001@smtp-brevo.com",
-    pass: "smtp-key",
-  });
-
-  const options = (
-    transport as unknown as {
-      options: { host?: string; port?: number; secure?: boolean };
-    }
-  ).options;
-
-  assert.equal(options.host, BREVO_SMTP_HOST);
-  assert.equal(options.port, BREVO_SMTP_PORT);
-  assert.equal(options.secure, false);
-});
-
-test("buildContactMailMessage escapes HTML and keeps reply-to", () => {
-  const message = buildContactMailMessage({
+test("buildContactEmailPayload shapes Brevo transactional request", () => {
+  const payload = buildContactEmailPayload({
     name: 'Ada <script>',
     email: "ada@example.com",
     message: "Hello\nworld",
     to: "owner@example.com",
-    from: "noreply@demirkaya.net",
+    fromEmail: "noreply@demirkaya.net",
+    fromName: "Portfolio",
   });
 
-  assert.equal(message.from, "noreply@demirkaya.net");
-  assert.equal(message.to, "owner@example.com");
-  assert.equal(message.replyTo, "ada@example.com");
-  assert.match(message.subject, /Ada <script>/);
-  assert.match(message.html, /Ada &lt;script&gt;/);
-  assert.match(message.html, /Hello<br \/>world/);
-  assert.match(message.text, /Hello\nworld/);
+  assert.equal(payload.sender.email, "noreply@demirkaya.net");
+  assert.equal(payload.sender.name, "Portfolio");
+  assert.deepEqual(payload.to, [{ email: "owner@example.com" }]);
+  assert.deepEqual(payload.replyTo, {
+    email: "ada@example.com",
+    name: 'Ada <script>',
+  });
+  assert.match(payload.htmlContent, /Ada &lt;script&gt;/);
+  assert.match(payload.htmlContent, /Hello<br \/>world/);
+});
+
+test("sendContactMail posts to Brevo API with api-key", async () => {
+  const calls: Array<{ url: string; init?: RequestInit }> = [];
+
+  const fakeFetch: typeof fetch = async (url, init) => {
+    calls.push({ url: String(url), init });
+    return new Response(JSON.stringify({ messageId: "msg-1" }), {
+      status: 201,
+      headers: { "content-type": "application/json" },
+    });
+  };
+
+  const result = await sendContactMail(
+    {
+      name: "Ada",
+      email: "ada@example.com",
+      message: "Hello there friend",
+      to: "owner@example.com",
+      fromEmail: "noreply@demirkaya.net",
+      apiKey: "xkeysib-test",
+    },
+    fakeFetch
+  );
+
+  assert.equal(result.ok, true);
+  if (result.ok) assert.equal(result.messageId, "msg-1");
+
+  assert.equal(calls[0]?.url, "https://api.brevo.com/v3/smtp/email");
+  const headers = new Headers(calls[0]?.init?.headers);
+  assert.equal(headers.get("api-key"), "xkeysib-test");
+});
+
+test("sendContactMail returns Brevo failure detail", async () => {
+  const fakeFetch: typeof fetch = async () =>
+    new Response(JSON.stringify({ message: "Key not found" }), {
+      status: 401,
+    });
+
+  const result = await sendContactMail(
+    {
+      name: "Ada",
+      email: "ada@example.com",
+      message: "Hello there friend",
+      to: "owner@example.com",
+      fromEmail: "noreply@demirkaya.net",
+      apiKey: "bad",
+    },
+    fakeFetch
+  );
+
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.status, 401);
+    assert.match(result.detail, /Key not found/);
+  }
 });

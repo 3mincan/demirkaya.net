@@ -29,20 +29,20 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Contact form (Brevo SMTP)
+## Contact form (Brevo API)
 
-The `/api/contact` route sends mail through Brevo’s SMTP relay (`smtp-relay.brevo.com:587`).
+The `/api/contact` route sends mail through the [Brevo transactional email API](https://developers.brevo.com/reference/send-transac-email) (HTTPS). This is intentional: outbound SMTP from Vercel is unreliable.
 
-Set these environment variables in Vercel (and locally via `.env.local`):
+Set these environment variables in **Vercel → Project → Settings → Environment Variables** (Production + Preview), then redeploy:
 
 | Variable | Required | Description |
 | --- | --- | --- |
-| `SMTP_USER` | yes | Brevo SMTP login (e.g. `…@smtp-brevo.com`) |
-| `SMTP_PASS` | yes | Brevo SMTP key (not the API key) |
-| `MAIL_FROM` | yes | Verified sender email in Brevo |
+| `BREVO_API_KEY` | yes | API key from Brevo → SMTP & API → **API keys** (starts with `xkeysib-`) |
+| `MAIL_FROM` | yes | Verified sender email in Brevo (not the `…@smtp-brevo.com` login) |
+| `MAIL_FROM_NAME` | no | Sender display name (default `demirkaya.net`) |
 | `CONTACT_TO` | no | Inbox that receives form messages |
 
-Copy `.env.example` to get started. Host and port are fixed to Brevo defaults in code.
+Do **not** use `SMTP_USER` / `SMTP_PASS` for this app — those are SMTP-only and are ignored.
 
 ## Deploy on Vercel
 

@@ -1,53 +1,35 @@
-import nodemailer from "nodemailer";
-
-export const BREVO_SMTP_HOST = "smtp-relay.brevo.com";
-export const BREVO_SMTP_PORT = 587;
+const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
 export type ContactMailInput = {
   name: string;
   email: string;
   message: string;
   to: string;
-  from: string;
-  smtpUser: string;
-  smtpPass: string;
-  smtpHost?: string;
-  smtpPort?: number;
+  fromEmail: string;
+  fromName?: string;
+  apiKey: string;
 };
 
 export type SendMailResult =
-  | { ok: true }
-  | { ok: false; detail: string };
+  | { ok: true; messageId?: string }
+  | { ok: false; status?: number; detail: string };
 
-export function createBrevoTransport(options: {
-  user: string;
-  pass: string;
-  host?: string;
-  port?: number;
-}) {
-  const port = options.port ?? BREVO_SMTP_PORT;
-
-  return nodemailer.createTransport({
-    host: options.host ?? BREVO_SMTP_HOST,
-    port,
-    secure: port === 465,
-    auth: {
-      user: options.user,
-      pass: options.pass,
-    },
-  });
-}
-
-export function buildContactMailMessage(
-  input: Pick<ContactMailInput, "name" | "email" | "message" | "to" | "from">
+export function buildContactEmailPayload(
+  input: Omit<ContactMailInput, "apiKey">
 ) {
   return {
-    from: input.from,
-    to: input.to,
-    replyTo: input.email,
+    sender: {
+      email: input.fromEmail,
+      name: input.fromName || "demirkaya.net",
+    },
+    to: [{ email: input.to }],
+    replyTo: {
+      email: input.email,
+      name: input.name,
+    },
     subject: `New message from ${input.name} via demirkaya.net`,
-    text: `Name: ${input.name}\nEmail: ${input.email}\n\n${input.message}`,
-    html: `
+    textContent: `Name: ${input.name}\nEmail: ${input.email}\n\n${input.message}`,
+    htmlContent: `
       <p><strong>Name:</strong> ${escapeHtml(input.name)}</p>
       <p><strong>Email:</strong> ${escapeHtml(input.email)}</p>
       <p>${escapeHtml(input.message).replace(/\n/g, "<br />")}</p>
@@ -56,22 +38,34 @@ export function buildContactMailMessage(
 }
 
 export async function sendContactMail(
-  input: ContactMailInput
+  input: ContactMailInput,
+  fetchImpl: typeof fetch = fetch
 ): Promise<SendMailResult> {
-  const transporter = createBrevoTransport({
-    user: input.smtpUser,
-    pass: input.smtpPass,
-    host: input.smtpHost,
-    port: input.smtpPort,
-  });
-
   try {
-    await transporter.sendMail(buildContactMailMessage(input));
-    return { ok: true };
+    const response = await fetchImpl(BREVO_API_URL, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+        "api-key": input.apiKey,
+      },
+      body: JSON.stringify(buildContactEmailPayload(input)),
+    });
+
+    if (response.ok) {
+      const data = (await response.json().catch(() => null)) as {
+        messageId?: string;
+      } | null;
+      return { ok: true, messageId: data?.messageId };
+    }
+
+    const detail = await response.text().catch(() => "Unknown Brevo error");
+    return { ok: false, status: response.status, detail };
   } catch (error) {
-    const detail =
-      error instanceof Error ? error.message : "Unknown SMTP error";
-    return { ok: false, detail };
+    return {
+      ok: false,
+      detail: error instanceof Error ? error.message : "Unknown network error",
+    };
   }
 }
 

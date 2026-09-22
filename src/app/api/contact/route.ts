@@ -35,15 +35,15 @@ export async function POST(request: Request) {
   }
 
   const {
-    SMTP_USER,
-    SMTP_PASS,
+    BREVO_API_KEY,
     MAIL_FROM,
+    MAIL_FROM_NAME = "demirkaya.net",
     CONTACT_TO = "e.demirkaya@gmail.com",
   } = process.env;
 
-  if (!SMTP_USER || !SMTP_PASS || !MAIL_FROM) {
+  if (!BREVO_API_KEY || !MAIL_FROM) {
     console.error(
-      "Contact email misconfigured: SMTP_USER, SMTP_PASS, and MAIL_FROM are required."
+      "Contact email misconfigured: BREVO_API_KEY and MAIL_FROM are required."
     );
     return NextResponse.json(
       { message: "Email is not configured yet. Please email me directly." },
@@ -56,13 +56,13 @@ export async function POST(request: Request) {
     email,
     message,
     to: CONTACT_TO,
-    from: MAIL_FROM,
-    smtpUser: SMTP_USER,
-    smtpPass: SMTP_PASS,
+    fromEmail: MAIL_FROM,
+    fromName: MAIL_FROM_NAME,
+    apiKey: BREVO_API_KEY,
   });
 
   if (!result.ok) {
-    console.error("Brevo SMTP send failed:", result.detail);
+    console.error("Brevo API send failed:", result.status, result.detail);
     return NextResponse.json(
       { message: "Could not send your message. Please email me directly." },
       { status: 500 }
