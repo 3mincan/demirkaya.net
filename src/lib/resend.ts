@@ -33,11 +33,15 @@ export function buildContactEmailPayload(
 export function summarizeResendFailure(status?: number, detail?: string) {
   const text = (detail || "").toLowerCase();
 
-  if (status === 401 || status === 403) {
+  if (status === 401) {
     return "Resend auth failed — check RESEND_API_KEY on Vercel.";
   }
-  if (status === 403 || text.includes("not verified") || text.includes("domain")) {
-    return "Resend domain/from not allowed — verify MAIL_FROM domain in Resend (or use beth.t@example.com until DNS is verified).";
+  if (
+    status === 403 ||
+    text.includes("not verified") ||
+    text.includes("domain is not verified")
+  ) {
+    return "Resend domain/from not allowed — verify MAIL_FROM domain in Resend (or use onboarding@resend.dev until DNS is verified).";
   }
   if (status === 422) {
     return "Resend rejected the payload — check MAIL_FROM and CONTACT_TO.";
