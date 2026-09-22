@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sendContactMail, summarizeMailgunFailure } from "@/lib/mailgun";
+import { sendContactMail, summarizeResendFailure } from "@/lib/resend";
 
 type ContactPayload = {
   name?: string;
@@ -38,21 +38,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const MAILGUN_API_KEY = env("MAILGUN_API_KEY");
-  const MAILGUN_DOMAIN = env("MAILGUN_DOMAIN");
-  const MAILGUN_API_BASE = env("MAILGUN_API_BASE");
-  const MAIL_FROM = env("MAIL_FROM");
-  const MAIL_FROM_NAME = env("MAIL_FROM_NAME") || "demirkaya.net";
+  const RESEND_API_KEY = env("RESEND_API_KEY");
+  const MAIL_FROM =
+    env("MAIL_FROM") || "demirkaya.net <onboarding@resend.dev>";
   const CONTACT_TO = env("CONTACT_TO") || "e.demirkaya@gmail.com";
 
-  if (!MAILGUN_API_KEY || !MAILGUN_DOMAIN || !MAIL_FROM) {
-    console.error(
-      "Contact email misconfigured: MAILGUN_API_KEY, MAILGUN_DOMAIN, and MAIL_FROM are required."
-    );
+  if (!RESEND_API_KEY) {
+    console.error("Contact email misconfigured: RESEND_API_KEY is required.");
     return NextResponse.json(
       {
         message: "Email is not configured yet. Please email me directly.",
-        reason: "Missing MAILGUN_API_KEY, MAILGUN_DOMAIN, or MAIL_FROM on Vercel.",
+        reason: "Missing RESEND_API_KEY on Vercel.",
       },
       { status: 500 }
     );
@@ -63,21 +59,13 @@ export async function POST(request: Request) {
     email,
     message,
     to: CONTACT_TO,
-    fromEmail: MAIL_FROM,
-    fromName: MAIL_FROM_NAME,
-    apiKey: MAILGUN_API_KEY,
-    domain: MAILGUN_DOMAIN,
-    apiBase: MAILGUN_API_BASE,
+    from: MAIL_FROM,
+    apiKey: RESEND_API_KEY,
   });
 
   if (!result.ok) {
-    const reason = summarizeMailgunFailure(result.status, result.detail);
-    console.error(
-      "Mailgun send failed:",
-      result.status,
-      result.apiBaseTried,
-      result.detail
-    );
+    const reason = summarizeResendFailure(result.status, result.detail);
+    console.error("Resend send failed:", result.status, result.detail);
     return NextResponse.json(
       {
         message: "Could not send your message. Please email me directly.",
