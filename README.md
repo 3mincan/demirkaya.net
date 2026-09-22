@@ -29,20 +29,20 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Contact form (Brevo API)
+## Contact form (Mailgun)
 
-The `/api/contact` route sends mail through the [Brevo transactional email API](https://developers.brevo.com/reference/send-transac-email) (HTTPS). This is intentional: outbound SMTP from Vercel is unreliable.
+The `/api/contact` route sends mail through the [Mailgun Messages API](https://documentation.mailgun.com/docs/mailgun/user-manual/sending-messages/) over HTTPS (works reliably on Vercel; no SMTP).
 
-Set these environment variables in **Vercel → Project → Settings → Environment Variables** (Production + Preview), then redeploy:
+Set these in **Vercel → Project → Settings → Environment Variables** (Production + Preview), remove old `BREVO_*` / `SMTP_*` vars, then redeploy:
 
 | Variable | Required | Description |
 | --- | --- | --- |
-| `BREVO_API_KEY` | yes | API key from Brevo → SMTP & API → **API keys** (starts with `xkeysib-`) |
-| `MAIL_FROM` | yes | Verified sender email in Brevo (not the `…@smtp-brevo.com` login) |
+| `MAILGUN_API_KEY` | yes | Private API key from Mailgun |
+| `MAILGUN_DOMAIN` | yes | Verified sending domain (e.g. `mg.demirkaya.net`) |
+| `MAIL_FROM` | yes | From address on that domain |
 | `MAIL_FROM_NAME` | no | Sender display name (default `demirkaya.net`) |
 | `CONTACT_TO` | no | Inbox that receives form messages |
-
-Do **not** use `SMTP_USER` / `SMTP_PASS` for this app — those are SMTP-only and are ignored.
+| `MAILGUN_API_BASE` | no | Default `https://api.mailgun.net`; EU accounts use `https://api.eu.mailgun.net` |
 
 ## Deploy on Vercel
 
