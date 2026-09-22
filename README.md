@@ -29,22 +29,31 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Contact form (Mailgun)
+## Contact form (Resend)
 
-The `/api/contact` route sends mail through the [Mailgun Messages API](https://documentation.mailgun.com/docs/mailgun/user-manual/sending-messages/) over HTTPS (works reliably on Vercel; no SMTP).
+The `/api/contact` route sends mail through the [Resend Email API](https://resend.com/docs/api-reference/emails/send-email) over HTTPS.
 
-Set these in **Vercel → Project → Settings → Environment Variables** (Production + Preview), remove old `BREVO_*` / `SMTP_*` vars, then redeploy:
+Set these in **Vercel → Project → Settings → Environment Variables** (Production + Preview), remove old `MAILGUN_*` / `BREVO_*` / `SMTP_*` vars, then **Redeploy**:
 
 | Variable | Required | Description |
 | --- | --- | --- |
-| `MAILGUN_API_KEY` | yes | Private API key from Mailgun |
-| `MAILGUN_DOMAIN` | yes | Verified sending domain (e.g. `mg.demirkaya.net`) |
-| `MAIL_FROM` | yes | From address on that domain |
-| `MAIL_FROM_NAME` | no | Sender display name (default `demirkaya.net`) |
-| `CONTACT_TO` | no | Inbox that receives form messages |
-| `MAILGUN_API_BASE` | no | Default `https://api.mailgun.net`; EU accounts use `https://api.eu.mailgun.net` |
+| `RESEND_API_KEY` | yes | API key from Resend (`re_…`) |
+| `MAIL_FROM` | no | Default `demirkaya.net <onboarding@resend.dev>` until `demirkaya.net` DNS is verified in Resend |
+| `CONTACT_TO` | no | Inbox that receives form messages (default `e.demirkaya@gmail.com`) |
 
-If `/api/contact` still returns 500, the JSON body includes a `reason` field (e.g. wrong region, domain, or sandbox recipient). Check that first, then Vercel function logs for the raw Mailgun response.
+If `/api/contact` returns 500, the JSON body includes a `reason` field.
+
+### Verify `demirkaya.net` in Resend (optional, for branded From)
+
+Add these DNS records (from Resend Domains), then click Verify in Resend:
+
+| Type | Name | Value |
+| --- | --- | --- |
+| TXT | `resend._domainkey` | (DKIM value from Resend dashboard) |
+| CNAME | `send` | `send.forge.rmta.net` |
+| CNAME | `rsend` | `rsend-euw1.forge.rmta.net` |
+
+Until verified, keep `MAIL_FROM=demirkaya.net <onboarding@resend.dev>`.
 
 ## Deploy on Vercel
 
