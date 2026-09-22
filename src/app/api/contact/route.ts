@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sendContactMail } from "@/lib/mailgun";
+import { sendContactMail, summarizeMailgunFailure } from "@/lib/mailgun";
 
 type ContactPayload = {
   name?: string;
@@ -10,6 +10,10 @@ type ContactPayload = {
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function env(name: string) {
+  return process.env[name]?.trim() || undefined;
 }
 
 export async function POST(request: Request) {
@@ -34,21 +38,22 @@ export async function POST(request: Request) {
     );
   }
 
-  const {
-    MAILGUN_API_KEY,
-    MAILGUN_DOMAIN,
-    MAILGUN_API_BASE,
-    MAIL_FROM,
-    MAIL_FROM_NAME = "demirkaya.net",
-    CONTACT_TO = "e.demirkaya@gmail.com",
-  } = process.env;
+  const MAILGUN_API_KEY = env("MAILGUN_API_KEY");
+  const MAILGUN_DOMAIN = env("MAILGUN_DOMAIN");
+  const MAILGUN_API_BASE = env("MAILGUN_API_BASE");
+  const MAIL_FROM = env("MAIL_FROM");
+  const MAIL_FROM_NAME = env("MAIL_FROM_NAME") || "demirkaya.net";
+  const CONTACT_TO = env("CONTACT_TO") || "e.demirkaya@gmail.com";
 
   if (!MAILGUN_API_KEY || !MAILGUN_DOMAIN || !MAIL_FROM) {
     console.error(
       "Contact email misconfigured: MAILGUN_API_KEY, MAILGUN_DOMAIN, and MAIL_FROM are required."
     );
     return NextResponse.json(
-      { message: "Email is not configured yet. Please email me directly." },
+      {
+        message: "Email is not configured yet. Please email me directly.",
+        reason: "Missing MAILGUN_API_KEY, MAILGUN_DOMAIN, or MAIL_FROM on Vercel.",
+      },
       { status: 500 }
     );
   }
@@ -66,9 +71,19 @@ export async function POST(request: Request) {
   });
 
   if (!result.ok) {
-    console.error("Mailgun send failed:", result.status, result.detail);
+    const reason = summarizeMailgunFailure(result.status, result.detail);
+    console.error(
+      "Mailgun send failed:",
+      result.status,
+      result.apiBaseTried,
+      result.detail
+    );
     return NextResponse.json(
-      { message: "Could not send your message. Please email me directly." },
+      {
+        message: "Could not send your message. Please email me directly.",
+        reason,
+        providerStatus: result.status ?? null,
+      },
       { status: 500 }
     );
   }

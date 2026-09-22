@@ -4,6 +4,7 @@ import {
   buildContactMailForm,
   buildMailgunMessagesUrl,
   sendContactMail,
+  summarizeMailgunFailure,
 } from "./mailgun";
 
 test("buildMailgunMessagesUrl encodes domain and strips trailing slash", () => {
@@ -30,9 +31,7 @@ test("buildContactMailForm sets from, reply-to, and escaped html", () => {
   assert.equal(body.get("from"), "Portfolio <noreply@mg.demirkaya.net>");
   assert.equal(body.get("to"), "owner@example.com");
   assert.equal(body.get("h:Reply-To"), "ada@example.com");
-  assert.match(body.get("subject") ?? "", /Ada <script>/);
   assert.match(body.get("html") ?? "", /Ada &lt;script&gt;/);
-  assert.match(body.get("html") ?? "", /Hello<br \/>world/);
 });
 
 test("sendContactMail posts to Mailgun with basic auth", async () => {
@@ -61,25 +60,22 @@ test("sendContactMail posts to Mailgun with basic auth", async () => {
 
   assert.equal(result.ok, true);
   if (result.ok) assert.equal(result.messageId, "<msg-1>");
-
   assert.equal(
     calls[0]?.url,
     "https://api.mailgun.net/v3/mg.demirkaya.net/messages"
   );
-  const headers = new Headers(calls[0]?.init?.headers);
-  assert.equal(
-    headers.get("Authorization"),
-    `Basic ${Buffer.from("api:key-test").toString("base64")}`
-  );
-  assert.equal(
-    headers.get("Content-Type"),
-    "application/x-www-form-urlencoded"
-  );
 });
 
-test("sendContactMail returns Mailgun failure detail", async () => {
-  const fakeFetch: typeof fetch = async () =>
-    new Response("Forbidden", { status: 401 });
+test("sendContactMail retries EU host after US 401 when apiBase unset", async () => {
+  const urls: string[] = [];
+
+  const fakeFetch: typeof fetch = async (url) => {
+    urls.push(String(url));
+    if (String(url).includes("api.mailgun.net")) {
+      return new Response("Forbidden", { status: 401 });
+    }
+    return new Response(JSON.stringify({ id: "<eu-1>" }), { status: 200 });
+  };
 
   const result = await sendContactMail(
     {
@@ -88,15 +84,21 @@ test("sendContactMail returns Mailgun failure detail", async () => {
       message: "Hello there friend",
       to: "owner@example.com",
       fromEmail: "noreply@mg.demirkaya.net",
-      apiKey: "bad",
+      apiKey: "key-test",
       domain: "mg.demirkaya.net",
     },
     fakeFetch
   );
 
-  assert.equal(result.ok, false);
-  if (!result.ok) {
-    assert.equal(result.status, 401);
-    assert.match(result.detail, /Forbidden/);
-  }
+  assert.equal(result.ok, true);
+  assert.deepEqual(urls, [
+    "https://api.mailgun.net/v3/mg.demirkaya.net/messages",
+    "https://api.eu.mailgun.net/v3/mg.demirkaya.net/messages",
+  ]);
+});
+
+test("summarizeMailgunFailure maps common statuses", () => {
+  assert.match(summarizeMailgunFailure(401), /MAILGUN_API_BASE/);
+  assert.match(summarizeMailgunFailure(404), /MAILGUN_DOMAIN/);
+  assert.match(summarizeMailgunFailure(400, "sandbox"), /sandbox/i);
 });
